@@ -42,8 +42,8 @@ var last_section := 0
 var respawns := 0
 var boost_trail: GPUParticles3D
 var dust: GPUParticles3D
-var touch_running := false
-var touch_steer := 0.0
+var auto_run := false
+var touch_shift := 0.0
 
 func setup(route: CoastCourse, scenery: CoastWorld) -> void:
 	course = route
@@ -95,8 +95,8 @@ func step(dt: float) -> void:
 	jump_buffer = maxf(0,jump_buffer-dt)
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = 0.14
-	var throttle := 1.0 if touch_running else Input.get_axis("brake","accelerate")
-	var steer := clampf(Input.get_axis("left","right")+touch_steer,-1,1)
+	var throttle := 1.0 if auto_run else Input.get_axis("brake","accelerate")
+	var steer := Input.get_axis("left","right")
 	var drift := Input.is_action_pressed("drift") and grounded and speed > 14 and absf(steer) > 0.15
 	boost_on = Input.is_action_pressed("boost") and boost > 0 and charge == 0
 	var previous_s := s
@@ -145,7 +145,7 @@ func step(dt: float) -> void:
 				drift_charge = 0
 			var lateral_target := steer*(8.0+speed*0.065)*(1.16 if drift else 1.0)
 			lateral_velocity = lerpf(lateral_velocity,lateral_target,1-exp(-dt*(7 if drift else 15)))
-			lateral += lateral_velocity*dt
+			lateral += lateral_velocity*dt+touch_shift
 			if surface.mode == "rail" and grounded:
 				lateral = lerpf(lateral,roundf(lateral/3.1)*3.1,dt*6) if absf(steer) < 0.2 else lateral
 			var metric := 1.0
@@ -174,6 +174,7 @@ func step(dt: float) -> void:
 					state = "walk"
 				else:
 					state = "idle"
+	touch_shift = 0
 	surface = course.sample(s,branch)
 	position = surface.p+surface.r*lateral+surface.n*height
 	basis = basis.orthonormalized().slerp(surface.basis,1-exp(-dt*22)).orthonormalized()

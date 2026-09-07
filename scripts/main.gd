@@ -27,14 +27,13 @@ var capture_marks: Dictionary = {}
 var capture_pending := false
 var touch_controls := DisplayServer.is_touchscreen_available()
 var touch_index := -1
-var touch_offset := 0.0
-var flick_distance := 0.0
-var flick_fired := false
-# Gesture distances are fractions of the viewport's shorter side.
-const TOUCH_STEER_RANGE := 0.16
-const TOUCH_DEADZONE := 0.015
-const FLICK_DISTANCE := 0.055
-const FLICK_SPEED := 0.8
+var touch_distance := 0.0
+var touch_started := 0
+var touch_origin := Vector2.ZERO
+# Distances are fractions of the viewport's shorter side.
+const TOUCH_MOVE_SCALE := 24.0
+const TAP_SLOP := 0.025
+const TAP_MAX_MS := 280
 
 func _ready() -> void:
 	DisplayServer.window_set_title("MONA • Azure Coast")
@@ -113,25 +112,28 @@ func setup_input() -> void:
 
 func clear_touch() -> void:
 	touch_index = -1
-	touch_offset = 0
-	flick_distance = 0
-	flick_fired = false
-	player.touch_running = false
-	player.touch_steer = 0
+	touch_distance = 0
+	player.touch_shift = 0
 	player.jump_buffer = 0
 
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventScreenTouch or event is InputEventScreenDrag):
 		return
 	touch_controls = true
+	player.auto_run = not demo
 	get_viewport().set_input_as_handled()
+	var extent := get_viewport().get_visible_rect().size
+	var unit := minf(extent.x,extent.y)
 	if event is InputEventScreenTouch:
 		if not event.pressed or event.canceled:
 			if event.index == touch_index:
-				# Preserve a flick queued just before finger-up until the physics tick.
-				var jump := 0.0 if event.canceled else player.jump_buffer
-				clear_touch()
-				player.jump_buffer = jump
+				if event.canceled:
+					clear_touch()
+				else:
+					var travel := maxf(touch_distance,event.position.distance_to(touch_origin)/unit)
+					if mode == "play" and travel <= TAP_SLOP and Time.get_ticks_msec()-touch_started <= TAP_MAX_MS:
+						player.jump_buffer = 0.14
+					touch_index = -1
 			return
 		var at: Vector2 = event.position*Vector2(1600,900)/hud.size
 		for id in hud.buttons:
@@ -140,21 +142,13 @@ func _input(event: InputEvent) -> void:
 				return
 		if mode == "play" and not hud.help_open and not demo and touch_index == -1:
 			touch_index = event.index
-			player.touch_running = true
+			touch_origin = event.position
+			touch_distance = 0
+			touch_started = Time.get_ticks_msec()
 	elif event.index == touch_index and mode == "play":
-		var extent := get_viewport().get_visible_rect().size
-		var unit := minf(extent.x,extent.y)
 		var movement: Vector2 = event.relative/unit
-		touch_offset = clampf(touch_offset+movement.x,-TOUCH_STEER_RANGE,TOUCH_STEER_RANGE)
-		player.touch_steer = signf(touch_offset)*clampf((absf(touch_offset)-TOUCH_DEADZONE)/(TOUCH_STEER_RANGE-TOUCH_DEADZONE),0,1)
-		if -event.velocity.y/unit >= FLICK_SPEED and -movement.y > absf(movement.x):
-			flick_distance -= movement.y
-			if flick_distance >= FLICK_DISTANCE and not flick_fired:
-				player.jump_buffer = 0.14
-				flick_fired = true
-		else:
-			flick_distance = 0
-			flick_fired = false
+		touch_distance += movement.length()
+		player.touch_shift += movement.x*TOUCH_MOVE_SCALE
 
 func _unhandled_input(event: InputEvent) -> void:
 	if mode in ["title","pause","finish"] or hud.help_open:
@@ -194,6 +188,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func start_run() -> void:
 	clear_touch()
+	player.auto_run = touch_controls and not demo
 	player.restart()
 	player.active = true
 	mode = "play"

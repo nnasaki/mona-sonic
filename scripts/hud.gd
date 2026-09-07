@@ -118,7 +118,7 @@ func draw_title() -> void:
 	text_at("28° N   /   16° W",Vector2(1335,87),number_font,13,cream)
 	draw_circle(Vector2(1289,59),5,turquoise)
 	text_at("SPEED IS A FEELING.",Vector2(1266,839),number_font,19,cream)
-	text_at("HOLD · SWIPE · FLICK UP" if game.touch_controls else "F  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
+	text_at("AUTO RUN · SWIPE · TAP" if game.touch_controls else "F  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
 
 func draw_gameplay(p: CoastPlayer) -> void:
 	# Small translucent backing keeps white numerals readable against spray and sky.
@@ -153,7 +153,7 @@ func draw_gameplay(p: CoastPlayer) -> void:
 		pill(Rect2(bar.position,Vector2(bar.size.x*p.boost/100,12)),yellow if p.boost_on else turquoise,3)
 	for i in 9:
 		draw_line(Vector2(578+i*49.3,818),Vector2(578+i*49.3,830),Color(0.01,0.1,0.2,0.4),2)
-	centered("HOLD TO RUN · SWIPE TO STEER · FLICK UP TO JUMP" if game.touch_controls else "WASD  MOVE     SPACE  JUMP / HOMING     CTRL  ROLL     Q / E  DRIFT",852,number_font,14 if game.touch_controls else 11,Color("d5e8e9"))
+	centered("AUTO RUN · SWIPE LEFT / RIGHT · TAP TO JUMP" if game.touch_controls else "WASD  MOVE     SPACE  JUMP / HOMING     CTRL  ROLL     Q / E  DRIFT",852,number_font,14 if game.touch_controls else 11,Color("d5e8e9"))
 	if p.charge > 0:
 		centered("SPIN DASH  ·  RELEASE CTRL",710,number_font,19,yellow)
 		draw_arc(Vector2(800,654),29,-PI/2,-PI/2+TAU*p.charge/1.6,44,yellow,5,true)
@@ -175,7 +175,7 @@ func draw_gameplay(p: CoastPlayer) -> void:
 			for i in 4:
 				var angle := i*PI/2+clock*0.5
 				draw_arc(pos,radius,angle,angle+0.85,12,turquoise,3,true)
-			text_at("FLICK UP" if game.touch_controls else "SPACE",pos+Vector2(-22,radius+23),number_font,12,cream)
+			text_at("TAP" if game.touch_controls else "SPACE",pos+Vector2(-22,radius+23),number_font,12,cream)
 	draw_minimap(p)
 	if p.speed > 62 and not game.reduced_motion:
 		for i in 22:
@@ -256,9 +256,9 @@ func draw_help() -> void:
 	]
 	if game.touch_controls:
 		rows = [
-			["HOLD","Touch and hold the stage to run. Lift your finger to coast."],
-			["SWIPE LEFT / RIGHT","Slide while holding to steer. Slide back to center to go straight."],
-			["FLICK UP","Swipe up quickly to jump. Flick again to attack a locked target."],
+			["AUTO RUN","Mona runs automatically. No need to hold the screen."],
+			["SWIPE LEFT / RIGHT","Swipe to move sideways. Lift your finger to keep your line."],
+			["TAP","Tap to jump. Tap again in the air to attack a locked target."],
 			["PAUSE","Tap PAUSE for restart, sound and camera settings."],
 			["PLAY LANDSCAPE","Turn your phone sideways for a wider view."]
 		]
