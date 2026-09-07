@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#082c40">
+  <title>MONA · Azure Coast</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23082c40'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='44' fill='%23ffe05b'%3EM%3C/text%3E%3C/svg%3E">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #082c40; }
+    body { overflow: hidden; color: #fff8e7; font-family: system-ui, sans-serif; }
+    #canvas { display: block; width: 100%; height: 100%; border: 0; outline: none; touch-action: none; }
+    #loading { position: fixed; inset: 0; display: grid; place-content: center; padding: 32px; text-align: center; background: radial-gradient(ellipse at 70% 20%, #176d80, #082c40 70%); }
+    #loading[hidden] { display: none; }
+    .eyebrow { color: #8bddd8; font-size: 11px; letter-spacing: .28em; }
+    h1 { margin: 18px 0 0; font-size: clamp(64px, 12vw, 116px); line-height: 1; letter-spacing: -.055em; font-weight: 900; }
+    .coast { display: inline-block; justify-self: center; margin: 17px 0 35px; padding: 9px 24px; color: #082c40; background: #ffe05b; font-weight: 800; letter-spacing: .18em; transform: skew(-7deg); }
+    #status { min-height: 24px; margin: 0 0 18px; font-size: 15px; }
+    progress { width: min(340px, 75vw); height: 7px; justify-self: center; accent-color: #86ece3; }
+    .hint { max-width: 440px; margin: 25px auto 0; color: #b7d5d9; font-size: 12px; line-height: 1.8; }
+    #retry { justify-self: center; margin-top: 24px; padding: 12px 30px; border: 0; border-radius: 4px; color: #082c40; background: #ffe05b; font: inherit; cursor: pointer; }
+    #retry:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+    #fullscreen { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); padding: 7px 12px; border: 1px solid #ffffff42; border-radius: 4px; background: #082c408c; color: #fff8e7; font: 10px system-ui, sans-serif; letter-spacing: .08em; cursor: pointer; }
+    #fullscreen:focus-visible { outline: 2px solid #ffe05b; outline-offset: 3px; }
+  </style>
+  $GODOT_HEAD_INCLUDE
+</head>
+<body>
+  <canvas id="canvas" tabindex="0" aria-label="MONA Azure Coast game. Move with WASD, jump with Space, boost with Shift, pause with Escape."></canvas>
+  <button id="fullscreen" type="button" hidden>FULLSCREEN · F</button>
+  <section id="loading" aria-label="Loading Azure Coast">
+    <div class="eyebrow">A SEASIDE SPEED ADVENTURE</div>
+    <h1>MONA</h1>
+    <div class="coast">AZURE COAST</div>
+    <p id="status" role="status" aria-live="polite">Getting the coast ready…</p>
+    <progress id="progress" aria-label="Game download progress"></progress>
+    <p class="hint">Keyboard or controller · Sound starts with your first input.<br>WASD to move · Space to jump · Shift to boost · F for fullscreen</p>
+    <button id="retry" type="button" hidden>Try again</button>
+    <noscript>Enable JavaScript to play.</noscript>
+  </section>
+  <script src="$GODOT_URL"></script>
+  <script>
+    const config = $GODOT_CONFIG;
+    const engine = new Engine(config);
+    const canvas = document.getElementById('canvas');
+    const loading = document.getElementById('loading');
+    const status = document.getElementById('status');
+    const progress = document.getElementById('progress');
+    const retry = document.getElementById('retry');
+    const fullscreen = document.getElementById('fullscreen');
+    retry.addEventListener('click', () => location.reload());
+    canvas.addEventListener('contextmenu', event => event.preventDefault());
+
+    async function toggleFullscreen() {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch (error) {
+        fullscreen.textContent = 'FULLSCREEN · TRY AGAIN';
+        fullscreen.title = 'Your browser declined fullscreen. You can also use its View menu.';
+        console.warn('Fullscreen:', error.message);
+      }
+      canvas.focus();
+    }
+    fullscreen.addEventListener('click', toggleFullscreen);
+    document.addEventListener('keydown', event => {
+      if (event.code === 'KeyF' && event.target === canvas && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        toggleFullscreen();
+      }
+    }, true);
+    document.addEventListener('fullscreenchange', () => {
+      fullscreen.textContent = document.fullscreenElement ? 'EXIT FULLSCREEN · F' : 'FULLSCREEN · F';
+    });
+
+    function showError(error) {
+      console.error(error);
+      loading.hidden = false;
+      status.textContent = 'The coast could not load. ' + (error.message || String(error));
+      progress.hidden = true;
+      retry.hidden = false;
+    }
+
+    const missing = Engine.getMissingFeatures({ threads: $GODOT_THREADS_ENABLED });
+    if (missing.length) {
+      showError(new Error('This browser is missing: ' + missing.join(', ')));
+    } else {
+      engine.startGame({
+        canvas,
+        args: new URLSearchParams(location.search).has('demo') ? ['--', '--demo', '--no-record'] : [],
+        onProgress(current, total) {
+          if (total > 0) {
+            progress.max = total;
+            progress.value = current;
+            status.textContent = current < total ? 'Getting the coast ready… ' + Math.round(current / total * 100) + '%' : 'A little sunshine, a little sea breeze…';
+          }
+        },
+        onExit(code) {
+          if (code !== 0) showError(new Error('Please reload to try again.'));
+        }
+      }).then(() => {
+        loading.hidden = true;
+        fullscreen.hidden = !document.fullscreenEnabled;
+        canvas.focus();
+      }).catch(showError);
+    }
+  </script>
+</body>
+</html>

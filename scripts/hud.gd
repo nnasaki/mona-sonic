@@ -24,6 +24,7 @@ var selection := 0
 var using_keyboard := false
 
 func _ready() -> void:
+	number_font.fallbacks = [body_font]
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -117,7 +118,7 @@ func draw_title() -> void:
 	text_at("28° N   /   16° W",Vector2(1335,87),number_font,13,cream)
 	draw_circle(Vector2(1289,59),5,turquoise)
 	text_at("SPEED IS A FEELING.",Vector2(1266,839),number_font,19,cream)
-	text_at("F11  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
+	text_at("F  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
 
 func draw_gameplay(p: CoastPlayer) -> void:
 	# Small translucent backing keeps white numerals readable against spray and sky.
@@ -238,7 +239,7 @@ func draw_help() -> void:
 		["SHIFT   ·   RT / RB","Boost. Rings, enemies and drifting refill energy."],
 		["CTRL   ·   X","Hold to roll. At low speed, charge and release a spin dash."],
 		["Q / E   ·   LT / LB","Hold while steering to drift; release for a speed kick."],
-		["R   /   ESC   ·   START","Restart your run / pause. F11 toggles fullscreen."]
+		["R   /   ESC   ·   START","Restart your run / pause. F or F11 toggles fullscreen."]
 	]
 	for i in rows.size():
 		var y := 269+i*57

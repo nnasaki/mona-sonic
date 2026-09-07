@@ -69,6 +69,7 @@ func build_camera_collision(parent: Node3D) -> void:
 			build_camera_collision(child)
 
 func build_lighting() -> void:
+	var forward_plus := RenderingServer.get_current_rendering_method() == "forward_plus"
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
@@ -83,7 +84,7 @@ func build_lighting() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.ambient_light_color = Color("bfdefb")
-	env.ambient_light_energy = 0.43
+	env.ambient_light_energy = 0.43 if forward_plus else 0.34
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_exposure = 0.9
 	env.fog_enabled = true
@@ -92,30 +93,31 @@ func build_lighting() -> void:
 	env.fog_sky_affect = 0.15
 	env.fog_depth_begin = 380
 	env.fog_depth_end = 2100
-	env.ssao_enabled = true
+	env.ssao_enabled = forward_plus
 	env.ssao_radius = 2.0
 	env.ssao_intensity = 1.25
 	env.glow_enabled = true
 	env.glow_intensity = 0.35
 	env.glow_bloom = 0.06
 	env.glow_hdr_threshold = 1.3
-	env.ssr_enabled = true
+	env.ssr_enabled = forward_plus
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-40,-32,-8)
 	sun.light_color = Color("fff1d8")
-	sun.light_energy = 1.22
+	# Compatibility lights in a different color pipeline; keep Mona's peach face below clipping.
+	sun.light_energy = 1.22 if forward_plus else 0.65
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_max_distance = 220
-	sun.light_angular_distance = 0.7
+	sun.light_angular_distance = 0.7 if forward_plus else 0.0
 	add_child(sun)
 	var fill := DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(-25,145,0)
 	fill.light_color = Color("8edaff")
-	fill.light_energy = 0.20
+	fill.light_energy = 0.20 if forward_plus else 0.10
 	add_child(fill)
 
 func build_ocean() -> void:

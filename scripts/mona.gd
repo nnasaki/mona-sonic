@@ -26,6 +26,12 @@ func _init() -> void:
 		mat.metallic = 0
 		mat.metallic_specular = 0.15
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if RenderingServer.get_current_rendering_method() == "gl_compatibility":
+		# Painted facial features retain the reference palette in the WebGL color pipeline.
+		peach.albedo_color = Color("f6cbb2")
+		pupil.albedo_color = Color("b15f52")
+		for mat in [peach,ivory,pupil,sucker]:
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	add_child(rig)
 	G.sphere(rig,Vector3(0,0.91,0.04),Vector3(0.50,0.55,0.29),ink)
 	G.sphere(rig,Vector3(0,0.48,0.035),Vector3(0.48,0.18,0.28),ink)

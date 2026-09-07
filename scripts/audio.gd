@@ -7,6 +7,7 @@ var sounds: Dictionary = {}
 var voice_index := 0
 var last_ring := -1.0
 var wind := AudioStreamPlayer.new()
+var ambience_started := false
 
 func _ready() -> void:
 	add_child(music)
@@ -16,8 +17,6 @@ func _ready() -> void:
 		track.loop_end = track.data.size()/2
 		music.stream = track
 		music.volume_db = -14
-		if DisplayServer.get_name() != "headless":
-			music.play()
 	for i in 10:
 		var voice := AudioStreamPlayer.new()
 		add_child(voice)
@@ -27,8 +26,21 @@ func _ready() -> void:
 	add_child(wind)
 	wind.stream = synth("wind")
 	wind.volume_db = -45
-	if DisplayServer.get_name() != "headless":
-		wind.play()
+	if not OS.has_feature("web"):
+		start_ambience()
+
+func _input(event: InputEvent) -> void:
+	if OS.has_feature("web") and not ambience_started and event.is_pressed():
+		if event is InputEventKey or event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventJoypadButton:
+			start_ambience()
+
+func start_ambience() -> void:
+	if ambience_started or DisplayServer.get_name() == "headless":
+		return
+	ambience_started = true
+	if music.stream:
+		music.play()
+	wind.play()
 
 func synth(kind: String) -> AudioStreamWAV:
 	var sample_rate := 22050

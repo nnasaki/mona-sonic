@@ -11,21 +11,28 @@ config/description="An original, procedural coastal speed playground."
 [display]
 window/size/viewport_width=1600
 window/size/viewport_height=900
+window/size/viewport_width.web=1280
+window/size/viewport_height.web=720
 window/size/window_width_override=1440
 window/size/window_height_override=810
 window/stretch/mode="canvas_items"
+window/stretch/mode.web="viewport"
 
 [rendering]
 renderer/rendering_method="forward_plus"
 renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"
 rendering_device/driver.macos="metal"
 textures/default_filters/use_nearest_mipmap_filter=false
 anti_aliasing/quality/msaa_3d=2
+anti_aliasing/quality/msaa_3d.web=1
 anti_aliasing/quality/use_taa=true
+anti_aliasing/quality/use_taa.web=false
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality=3
 environment/defaults/default_clear_color=Color(0.18, 0.65, 0.85, 1)
 lights_and_shadows/directional_shadow/size=4096
+lights_and_shadows/directional_shadow/size.web=2048
 textures/default_filters/anisotropic_filtering_level=3
 
 [audio]
@@ -33,6 +40,7 @@ driver/enable_input=false
 
 [physics]
 common/physics_ticks_per_second=120
+common/physics_ticks_per_second.web=60
 
 [debug]
 gdscript/warnings/inference_on_variant=0

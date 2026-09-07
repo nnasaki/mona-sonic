@@ -128,6 +128,10 @@ func run() -> void:
 	await tick(0.02)
 	check(p.respawns == 1 and p.s < 82 and p.height == 0,"falling returns to checkpoint cleanly")
 	game.mode = "play"
+	game.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	check(game.mode == "pause" and not p.active,"losing focus pauses the run")
+	game.on_command("resume")
+	check(game.mode == "play" and p.active,"the run resumes after focus pause")
 	for point in [Vector2(0,0.25),Vector2(1,0.50),Vector2(2,0.75)]:
 		var section := int(point.x)
 		var distance := lerpf(course.sections[section].start,course.sections[section+1].start,point.y)

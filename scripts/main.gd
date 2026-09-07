@@ -72,11 +72,15 @@ func _ready() -> void:
 			update_camera(1.0,true)
 	print("AZURE COAST READY | %.0f m | %d rings | %d enemies | all assets local" % [course.length,world.rings.size(),world.enemies.size()])
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and mode == "play" and player and hud:
+		on_command("pause")
+
 func setup_input() -> void:
 	var mappings := {
 		"accelerate":[KEY_W,KEY_UP],"brake":[KEY_S,KEY_DOWN],"left":[KEY_A,KEY_LEFT],"right":[KEY_D,KEY_RIGHT],
 		"jump":[KEY_SPACE],"boost":[KEY_SHIFT],"roll":[KEY_CTRL],"drift":[KEY_Q,KEY_E],
-		"start":[KEY_ENTER],"pause":[KEY_ESCAPE],"restart":[KEY_R],"fullscreen":[KEY_F11],"help":[KEY_H]
+		"start":[KEY_ENTER],"pause":[KEY_ESCAPE],"restart":[KEY_R],"fullscreen":[KEY_F,KEY_F11],"help":[KEY_H]
 	}
 	for action in mappings:
 		if not InputMap.has_action(action):
@@ -108,7 +112,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			on_command(hud.buttons.keys()[clampi(hud.selection,0,hud.buttons.size()-1)])
 			get_viewport().set_input_as_handled()
 			return
-	if event.is_action_pressed("fullscreen"):
+	if event.is_action_pressed("fullscreen") and not OS.has_feature("web"):
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
 	if event.is_action_pressed("help"):
 		hud.help_open = not hud.help_open
@@ -182,7 +186,7 @@ func _process(dt: float) -> void:
 	if mode != "pause":
 		world.update(dt,player.s,player.position)
 		update_camera(dt)
-	audio.update(player.speed,mode == "play")
+	audio.update(player.speed if mode == "play" else 0.0,mode == "play")
 	if not capture_dir.is_empty() and clock > 2.0 and not capture_pending:
 		var mark := "title" if mode == "title" else ("finish" if mode == "finish" else "section_%02d" % course.section_at(player.s))
 		if not capture_marks.has(mark):
@@ -191,7 +195,12 @@ func _process(dt: float) -> void:
 			capture_frame.call_deferred(mark)
 	if demo and mode == "finish" and clock > player.elapsed+4:
 		print("DEMO COMPLETE | time=%.2f rings=%d max_speed=%.1f combo=%d respawns=%d" % [player.elapsed,player.ring_count,player.peak_speed,player.best_combo,player.respawns])
-		get_tree().quit()
+		if OS.has_feature("web"):
+			demo = false
+			for action in ["accelerate","boost","left","right","jump"]:
+				Input.action_release(action)
+		else:
+			get_tree().quit()
 
 func update_camera(dt: float, snap: bool = false) -> void:
 	var f: Dictionary = player.surface
