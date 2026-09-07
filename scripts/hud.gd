@@ -107,9 +107,9 @@ func draw_title() -> void:
 	text_at("Chase the horizon.",Vector2(77,420),display_font,28,cream)
 	text_at("An endless blue. An impossible line.",Vector2(79,458),body_font,20,Color("e2eef0"))
 	text_at("One unforgettable run.",Vector2(79,488),body_font,20,Color("e2eef0"))
-	button("start","LET'S ROLL",Rect2(76,545,310,67),true)
-	text_at("ENTER  /  A",Vector2(91,638),number_font,15,Color("d6e9e9"))
-	button("help","HOW TO PLAY",Rect2(77,675,236,45))
+	button("start","LET'S ROLL",Rect2(76,545,310,90 if game.touch_controls else 67),true)
+	text_at("TAP TO START · PLAY LANDSCAPE" if game.touch_controls else "ENTER  /  A",Vector2(91,660 if game.touch_controls else 638),number_font,15,Color("d6e9e9"))
+	button("help","HOW TO PLAY",Rect2(77,675,280,90 if game.touch_controls else 45))
 	draw_line(Vector2(77,806),Vector2(500,806),Color(1,1,1,0.3),1)
 	text_at("01",Vector2(77,851),number_font,30,yellow)
 	text_at("PALM RIDGE  →  THE GREAT CASCADE",Vector2(130,838),number_font,14,cream)
@@ -118,7 +118,7 @@ func draw_title() -> void:
 	text_at("28° N   /   16° W",Vector2(1335,87),number_font,13,cream)
 	draw_circle(Vector2(1289,59),5,turquoise)
 	text_at("SPEED IS A FEELING.",Vector2(1266,839),number_font,19,cream)
-	text_at("F  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
+	text_at("HOLD · SWIPE · FLICK UP" if game.touch_controls else "F  FULLSCREEN  /  H  CONTROLS",Vector2(1260,859),number_font,11,Color(1,1,1,0.64))
 
 func draw_gameplay(p: CoastPlayer) -> void:
 	# Small translucent backing keeps white numerals readable against spray and sky.
@@ -133,7 +133,10 @@ func draw_gameplay(p: CoastPlayer) -> void:
 	text_at(sec.number,Vector2(1261,77),number_font,35,yellow)
 	text_at(sec.title,Vector2(1320,60),number_font,17,cream)
 	text_at("AZURE COAST  /  ACT 01",Vector2(1320,82),number_font,12,Color("bfe8e8"))
-	text_at("ESC  PAUSE",Vector2(1454,121),number_font,12,cream)
+	if game.touch_controls and game.mode == "play" and not help_open:
+		button("pause","PAUSE",Rect2(1340,112,220,100))
+	else:
+		text_at("ESC  PAUSE",Vector2(1454,121),number_font,12,cream)
 	# Slim telemetry hugs the lower corners; the racing line remains unobstructed.
 	pill(Rect2(36,738,212,123),Color(0.015,0.10,0.16,0.42))
 	text_at("VELOCITY",Vector2(59,765),number_font,12,turquoise)
@@ -144,13 +147,13 @@ func draw_gameplay(p: CoastPlayer) -> void:
 	var bar := Rect2(578,818,444,12)
 	pill(Rect2(548,775,504,94),Color(0.015,0.10,0.16,0.42))
 	text_at("BOOST",Vector2(578,801),number_font,15,cream)
-	text_at("SHIFT  /  RT",Vector2(929,800),number_font,12,cream)
+	text_at("RINGS REFILL" if game.touch_controls else "SHIFT  /  RT",Vector2(929,800),number_font,12,cream)
 	pill(bar,Color(1,1,1,0.18),3)
 	if p.boost > 1:
 		pill(Rect2(bar.position,Vector2(bar.size.x*p.boost/100,12)),yellow if p.boost_on else turquoise,3)
 	for i in 9:
 		draw_line(Vector2(578+i*49.3,818),Vector2(578+i*49.3,830),Color(0.01,0.1,0.2,0.4),2)
-	centered("WASD  MOVE     SPACE  JUMP / HOMING     CTRL  ROLL     Q / E  DRIFT",852,number_font,11,Color("d5e8e9"))
+	centered("HOLD TO RUN · SWIPE TO STEER · FLICK UP TO JUMP" if game.touch_controls else "WASD  MOVE     SPACE  JUMP / HOMING     CTRL  ROLL     Q / E  DRIFT",852,number_font,14 if game.touch_controls else 11,Color("d5e8e9"))
 	if p.charge > 0:
 		centered("SPIN DASH  ·  RELEASE CTRL",710,number_font,19,yellow)
 		draw_arc(Vector2(800,654),29,-PI/2,-PI/2+TAU*p.charge/1.6,44,yellow,5,true)
@@ -172,7 +175,7 @@ func draw_gameplay(p: CoastPlayer) -> void:
 			for i in 4:
 				var angle := i*PI/2+clock*0.5
 				draw_arc(pos,radius,angle,angle+0.85,12,turquoise,3,true)
-			text_at("SPACE",pos+Vector2(-22,radius+23),number_font,12,cream)
+			text_at("FLICK UP" if game.touch_controls else "SPACE",pos+Vector2(-22,radius+23),number_font,12,cream)
 	draw_minimap(p)
 	if p.speed > 62 and not game.reduced_motion:
 		for i in 22:
@@ -193,10 +196,20 @@ func draw_minimap(p: CoastPlayer) -> void:
 	draw_circle(a.lerp(b,p.s/game.course.length),6,yellow)
 	text_at("COASTLINE",Vector2(1290,787),number_font,12,cream)
 	text_at("%d%%" % int(p.s/game.course.length*100),Vector2(1509,787),number_font,14,cream)
-	text_at("R  RESTART",Vector2(1458,851),number_font,12,cream)
+	if not game.touch_controls:
+		text_at("R  RESTART",Vector2(1458,851),number_font,12,cream)
 
 func draw_pause() -> void:
 	draw_rect(Rect2(0,0,1600,900),Color(0.015,0.07,0.12,0.70))
+	if game.touch_controls:
+		centered("CATCH YOUR BREATH.",180,display_font,41,cream)
+		button("resume","BACK TO THE COAST",Rect2(593,240,414,90),true)
+		button("restart","RESTART RUN",Rect2(593,340,414,90))
+		button("help","CONTROLS",Rect2(593,440,414,90))
+		button("motion","MOTION · "+("REDUCED" if game.reduced_motion else "CINEMATIC"),Rect2(593,540,414,90))
+		button("audio","AUDIO · "+("OFF" if game.muted else "ON"),Rect2(593,640,414,90))
+		button("title","TITLE SCREEN",Rect2(593,740,414,90))
+		return
 	centered("CATCH YOUR BREATH.",280,display_font,41,cream)
 	centered("The horizon can wait.",320,body_font,20,Color("bedadd"))
 	button("resume","BACK TO THE COAST",Rect2(593,374,414,63),true)
@@ -224,8 +237,8 @@ func draw_finish() -> void:
 		draw_line(Vector2(80,y+15),Vector2(536,y+15),Color(1,1,1,0.16),1)
 	if game.best_time > 0:
 		text_at("PERSONAL BEST  "+format_time(game.best_time),Vector2(81,661),number_font,17,yellow)
-	button("restart","ONE MORE RUN",Rect2(77,710,356,67),true)
-	button("title","BACK TO TITLE",Rect2(78,796,276,45))
+	button("restart","ONE MORE RUN",Rect2(77,690 if game.touch_controls else 710,356,90 if game.touch_controls else 67),true)
+	button("title","BACK TO TITLE",Rect2(78,796,276,90 if game.touch_controls else 45))
 
 func draw_help() -> void:
 	draw_rect(Rect2(0,0,1600,900),Color(0.01,0.06,0.1,0.94))
@@ -241,6 +254,14 @@ func draw_help() -> void:
 		["Q / E   ·   LT / LB","Hold while steering to drift; release for a speed kick."],
 		["R   /   ESC   ·   START","Restart your run / pause. F or F11 toggles fullscreen."]
 	]
+	if game.touch_controls:
+		rows = [
+			["HOLD","Touch and hold the stage to run. Lift your finger to coast."],
+			["SWIPE LEFT / RIGHT","Slide while holding to steer. Slide back to center to go straight."],
+			["FLICK UP","Swipe up quickly to jump. Flick again to attack a locked target."],
+			["PAUSE","Tap PAUSE for restart, sound and camera settings."],
+			["PLAY LANDSCAPE","Turn your phone sideways for a wider view."]
+		]
 	for i in rows.size():
 		var y := 269+i*57
 		text_at(rows[i][0],Vector2(235,y),number_font,18,yellow)
@@ -248,7 +269,7 @@ func draw_help() -> void:
 		draw_line(Vector2(235,y+18),Vector2(1366,y+18),Color(1,1,1,0.13),1)
 	text_at("TAKE THE HIGH ROAD",Vector2(235,721),number_font,17,turquoise)
 	text_at("Steer right after the opening, or left entering the ruins, to discover the skyline routes.",Vector2(235,753),body_font,19,cream)
-	button("close_help","GOT IT",Rect2(1130,784,240,58),true)
+	button("close_help","GOT IT",Rect2(1130,784,240,90 if game.touch_controls else 58),true)
 
 static func format_time(seconds: float) -> String:
 	return "%02d:%02d.%02d" % [int(seconds)/60,int(seconds)%60,int(seconds*100)%100]

@@ -32,6 +32,23 @@ func reset_at(distance: float) -> void:
 	p.surface = game.course.sample(distance)
 	p.transform = Transform3D(p.surface.basis,p.surface.p)
 
+func touch(pressed: bool, index: int = 0, canceled: bool = false) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = index
+	event.pressed = pressed
+	event.canceled = canceled
+	event.position = root.get_visible_rect().size*0.5
+	root.push_input(event,true)
+
+func swipe(relative: Vector2, velocity: Vector2, index: int = 0) -> void:
+	var extent := root.get_visible_rect().size
+	var unit := minf(extent.x,extent.y)
+	var event := InputEventScreenDrag.new()
+	event.index = index
+	event.relative = relative*unit
+	event.velocity = velocity*unit
+	root.push_input(event,true)
+
 func run() -> void:
 	game = load("res://main.tscn").instantiate()
 	root.add_child(game)
@@ -132,6 +149,43 @@ func run() -> void:
 	check(game.mode == "pause" and not p.active,"losing focus pauses the run")
 	game.on_command("resume")
 	check(game.mode == "play" and p.active,"the run resumes after focus pause")
+	reset_at(4)
+	touch(true)
+	await tick(0.8)
+	check(p.speed > 16 and p.touch_running,"holding the stage accelerates without keyboard input")
+	swipe(Vector2(0.08,0),Vector2(0.4,0))
+	await tick(0.15)
+	check(p.lateral > 0.1 and p.grounded,"horizontal swipes steer without jumping")
+	swipe(Vector2(-0.08,0),Vector2(-0.4,0))
+	check(is_zero_approx(p.touch_steer),"sliding back centers steering")
+	touch(true,1)
+	swipe(Vector2(-0.15,0),Vector2(-1,0),1)
+	touch(false,1)
+	check(p.touch_running and is_zero_approx(p.touch_steer),"a second finger cannot hijack or release the driving touch")
+	swipe(Vector2(0,-0.1),Vector2(0,-0.2))
+	check(is_zero_approx(p.jump_buffer),"slow vertical dragging does not jump")
+	swipe(Vector2(0,-0.08),Vector2(0,-1.5))
+	touch(false)
+	await tick(0.03)
+	check(not p.grounded and p.vertical_speed > 15,"an upward flick jumps even when released before the physics tick")
+	check(not p.touch_running and is_zero_approx(p.touch_steer),"finger-up releases acceleration and steering")
+	before = p.speed
+	await tick(0.1)
+	check(p.speed <= before and p.speed > before*0.9,"finger-up preserves coasting momentum")
+	touch(true)
+	swipe(Vector2(0,-0.08),Vector2(0,-1.5))
+	p.jump_buffer = 0
+	swipe(Vector2(0,-0.08),Vector2(0,-1.5))
+	check(is_zero_approx(p.jump_buffer),"one continuous upward flick triggers only one jump")
+	touch(false,0,true)
+	check(not p.touch_running and game.touch_index == -1,"touch cancellation clears held input")
+	touch(true)
+	game.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	game.on_command("resume")
+	check(not p.touch_running and game.touch_index == -1,"focus loss and resume never leave touch acceleration stuck")
+	touch(true)
+	game.start_run()
+	check(not p.touch_running and is_zero_approx(p.touch_steer),"restart clears touch input")
 	for point in [Vector2(0,0.25),Vector2(1,0.50),Vector2(2,0.75)]:
 		var section := int(point.x)
 		var distance := lerpf(course.sections[section].start,course.sections[section+1].start,point.y)

@@ -20,6 +20,10 @@ The default renderer is Forward+; macOS uses Metal. For an older GPU, a reduced 
 
 ## Play in a browser
 
+Play online: **https://nnasaki.github.io/mona-sonic/**
+
+On a phone, turn sideways and tap **LET'S ROLL**. Hold anywhere on the stage to run, slide left/right while holding to steer, and flick **up** to jump. Flick up again in the air to attack a locked target. Slide back to center the steering; lifting your finger releases acceleration and steering while preserving momentum. Use **PAUSE** to pause, restart or change settings. Keyboard and controller controls remain available.
+
 ```sh
 ./run-web.command
 ```

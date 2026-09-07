@@ -42,6 +42,8 @@ var last_section := 0
 var respawns := 0
 var boost_trail: GPUParticles3D
 var dust: GPUParticles3D
+var touch_running := false
+var touch_steer := 0.0
 
 func setup(route: CoastCourse, scenery: CoastWorld) -> void:
 	course = route
@@ -93,8 +95,8 @@ func step(dt: float) -> void:
 	jump_buffer = maxf(0,jump_buffer-dt)
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = 0.14
-	var throttle := Input.get_axis("brake","accelerate")
-	var steer := Input.get_axis("left","right")
+	var throttle := 1.0 if touch_running else Input.get_axis("brake","accelerate")
+	var steer := clampf(Input.get_axis("left","right")+touch_steer,-1,1)
 	var drift := Input.is_action_pressed("drift") and grounded and speed > 14 and absf(steer) > 0.15
 	boost_on = Input.is_action_pressed("boost") and boost > 0 and charge == 0
 	var previous_s := s
