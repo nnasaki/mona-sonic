@@ -3,10 +3,12 @@ extends Node3D
 
 signal feedback(kind: String, message: String)
 signal finished
-const Mona = preload("res://scripts/mona.gd")
+const Octocat = preload("res://scripts/mona.gd")
+const Mascot = preload("res://scripts/mascot.gd")
 var course: CoastCourse
 var world: CoastWorld
-var model := Mona.new()
+var character := "mona"
+var model = Mascot.new(character)
 var s := 2.0
 var lateral := 0.0
 var lateral_velocity := 0.0
@@ -55,6 +57,17 @@ func setup(route: CoastCourse, scenery: CoastWorld) -> void:
 	boost_trail.emitting = false
 	dust = world.particles(global_position,Color("f2d69a"),24,0.40,Vector3(0.35,0.04,0.2),Vector3(0,2,3),1.4,0.20)
 	dust.emitting = false
+
+func select_character(id: String) -> void:
+	if id not in ["mona","copilot","ducky","octocat"] or id == character:
+		return
+	var facing: Vector3 = model.rotation
+	remove_child(model)
+	model.queue_free()
+	character = id
+	model = Octocat.new() if id == "octocat" else Mascot.new(id)
+	add_child(model)
+	model.rotation = facing
 
 func restart() -> void:
 	s = 2.0

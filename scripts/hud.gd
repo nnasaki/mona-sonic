@@ -107,9 +107,21 @@ func draw_title() -> void:
 	text_at("Chase the horizon.",Vector2(77,420),display_font,28,cream)
 	text_at("An endless blue. An impossible line.",Vector2(79,458),body_font,20,Color("e2eef0"))
 	text_at("One unforgettable run.",Vector2(79,488),body_font,20,Color("e2eef0"))
-	button("start","LET'S ROLL",Rect2(76,545,310,90 if game.touch_controls else 67),true)
-	text_at("TAP TO START · PLAY LANDSCAPE" if game.touch_controls else "ENTER  /  A",Vector2(91,660 if game.touch_controls else 638),number_font,15,Color("d6e9e9"))
-	button("help","HOW TO PLAY",Rect2(77,675,280,90 if game.touch_controls else 45))
+	text_at("CHOOSE YOUR RUNNER",Vector2(79,523),number_font,15,turquoise)
+	# Register Start first so Enter / controller A still begins the run by default.
+	button("start","LET'S ROLL",Rect2(76,685,310,90),true)
+	var characters: Array[String] = game.available_characters()
+	for i in characters.size():
+		var id := "character:"+characters[i]
+		var rect := Rect2(76+i*160,542,148,90)
+		buttons[id] = rect
+		var chosen: bool = characters[i] == game.selected_character
+		pill(rect,turquoise if chosen else Color(1,1,1,0.16))
+		if using_keyboard and buttons.size()-1 == selection:
+			draw_rect(rect.grow(3),yellow,false,3)
+		centered(characters[i].to_upper(),596,number_font,20,ink if chosen else cream,rect.get_center().x)
+	text_at("OCTOCAT UNLOCKED!" if game.octocat_unlocked else ("TAP TO CHOOSE · PLAY LANDSCAPE" if game.touch_controls else "SELECT A RUNNER · ENTER TO PLAY"),Vector2(79,659),number_font,15,yellow if game.octocat_unlocked else cream)
+	button("help","HOW TO PLAY",Rect2(403,685,240,90))
 	draw_line(Vector2(77,806),Vector2(500,806),Color(1,1,1,0.3),1)
 	text_at("01",Vector2(77,851),number_font,30,yellow)
 	text_at("PALM RIDGE  →  THE GREAT CASCADE",Vector2(130,838),number_font,14,cream)
@@ -256,7 +268,7 @@ func draw_help() -> void:
 	]
 	if game.touch_controls:
 		rows = [
-			["AUTO RUN","Mona runs automatically. No need to hold the screen."],
+			["AUTO RUN","Your runner moves automatically. No need to hold the screen."],
 			["SWIPE LEFT / RIGHT","Swipe to move sideways. Lift your finger to keep your line."],
 			["TAP","Tap to jump. Tap again in the air to attack a locked target."],
 			["PAUSE","Tap PAUSE for restart, sound and camera settings."],
@@ -274,13 +286,19 @@ func draw_help() -> void:
 static func format_time(seconds: float) -> String:
 	return "%02d:%02d.%02d" % [int(seconds)/60,int(seconds)%60,int(seconds*100)%100]
 
+func command_at(at: Vector2) -> String:
+	if game.mode == "title" and not help_open and Rect2(63,165,440,125).has_point(at):
+		return "secret"
+	for id in buttons:
+		if buttons[id].has_point(at):
+			return id
+	return ""
+
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		using_keyboard = false
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var at: Vector2 = event.position*Vector2(1600,900)/size
-		for id in buttons:
-			if buttons[id].has_point(at):
-				command.emit(id)
-				accept_event()
-				return
+		var action := command_at(event.position*Vector2(1600,900)/size)
+		if not action.is_empty():
+			command.emit(action)
+			accept_event()

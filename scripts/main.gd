@@ -18,6 +18,9 @@ var camera_target := Vector3.ZERO
 var reduced_motion := false
 var muted := false
 var best_time := 0.0
+var selected_character := "mona"
+var octocat_unlocked := false
+var logo_taps := 0
 var record_enabled := true
 var clock := 0.0
 var demo := false
@@ -47,6 +50,7 @@ func _ready() -> void:
 	player = Player.new()
 	add_child(player)
 	player.setup(course,world)
+	player.select_character(selected_character)
 	player.feedback.connect(on_feedback)
 	player.finished.connect(on_finish)
 	add_child(camera)
@@ -136,10 +140,10 @@ func _input(event: InputEvent) -> void:
 					touch_index = -1
 			return
 		var at: Vector2 = event.position*Vector2(1600,900)/hud.size
-		for id in hud.buttons:
-			if hud.buttons[id].has_point(at):
-				on_command(id)
-				return
+		var action := hud.command_at(at)
+		if not action.is_empty():
+			on_command(action)
+			return
 		if mode == "play" and not hud.help_open and not demo and touch_index == -1:
 			touch_index = event.index
 			touch_origin = event.position
@@ -187,6 +191,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		start_run()
 
 func start_run() -> void:
+	logo_taps = 0
 	clear_touch()
 	player.auto_run = touch_controls and not demo
 	player.restart()
@@ -198,8 +203,29 @@ func start_run() -> void:
 	update_camera(1.0,true)
 	audio.play("dash") if audio else null
 
+func available_characters() -> Array[String]:
+	var result: Array[String] = ["mona","copilot","ducky"]
+	if octocat_unlocked:
+		result.append("octocat")
+	return result
+
 func on_command(action: String) -> void:
 	clear_touch()
+	if action.begins_with("character:") and mode == "title" and not hud.help_open:
+		var id := action.trim_prefix("character:")
+		if id in available_characters():
+			selected_character = id
+			player.select_character(id)
+			player.model.rotation.y = 3.26
+			save_record()
+		return
+	if action == "secret" and mode == "title" and not hud.help_open and not octocat_unlocked:
+		logo_taps += 1
+		if logo_taps == 5:
+			octocat_unlocked = true
+			audio.play("ring")
+			save_record()
+		return
 	if action not in ["motion","audio"]:
 		hud.selection = 0
 	match action:
@@ -333,11 +359,18 @@ func on_finish() -> void:
 	mode = "finish"
 	if record_enabled and (best_time == 0 or player.elapsed < best_time):
 		best_time = player.elapsed
-		var record := ConfigFile.new()
-		record.set_value("coast","best_time",best_time)
-		var result := record.save("user://record.cfg")
-		if result != OK:
-			push_warning("Could not save personal best: %s" % error_string(result))
+		save_record()
+
+func save_record() -> void:
+	if not record_enabled:
+		return
+	var record := ConfigFile.new()
+	record.set_value("coast","best_time",best_time)
+	record.set_value("coast","character",selected_character)
+	record.set_value("coast","octocat_unlocked",octocat_unlocked)
+	var result := record.save("user://record.cfg")
+	if result != OK:
+		push_warning("Could not save progress: %s" % error_string(result))
 
 func load_record() -> void:
 	var record := ConfigFile.new()
@@ -345,6 +378,9 @@ func load_record() -> void:
 		best_time = maxf(0,float(record.get_value("coast","best_time",0)))
 		if best_time < 10:
 			best_time = 0
+		octocat_unlocked = record.get_value("coast","octocat_unlocked",false) == true
+		var saved_character := str(record.get_value("coast","character","mona"))
+		selected_character = saved_character if saved_character in available_characters() else "mona"
 
 func drive_demo(dt: float) -> void:
 	Input.action_press("accelerate")

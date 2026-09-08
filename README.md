@@ -22,7 +22,7 @@ The default renderer is Forward+; macOS uses Metal. For an older GPU, a reduced 
 
 Play online: **https://nnasaki.github.io/mona-sonic/**
 
-On a phone, turn sideways and tap **LET'S ROLL**. Mona runs automatically. Swipe left/right to move sideways; lift your finger to keep your line. Tap the stage to jump, and tap again in the air to attack a locked target. Swipes and long presses do not trigger jumps. Use **PAUSE** to pause, restart or change settings. Keyboard and controller controls remain available.
+On a phone, turn sideways and tap **LET'S ROLL**. Your selected character runs automatically. Swipe left/right to move sideways; lift your finger to keep your line. Tap the stage to jump, and tap again in the air to attack a locked target. Swipes and long presses do not trigger jumps. Use **PAUSE** to pause, restart or change settings. Keyboard and controller controls remain available.
 
 ```sh
 ./run-web.command
@@ -59,11 +59,17 @@ For an automatic full-stage showcase, open **http://127.0.0.1:8765/?demo=1**. Th
 
 Menus support mouse, arrow keys / D-pad and Enter / A. The pause menu includes reduced camera motion and an audio toggle. Release acceleration to coast. Rings replenish boost, while braking, jumping, drifting and rolling retain continuous movement instead of stopping at each transition.
 
+## Choose a character
+
+Select **Mona**, **Copilot** or **Ducky** on the title screen to preview and play that character. The new procedural 3D models follow the supplied purple/pink cat, blue/purple robot with goggles, and yellow rubber duck references. They share the same movement and abilities, with their own animated appearance. Your selection is saved per browser/site.
+
+The original black **Octocat** is hidden: tap or click the title's **MONA** logo **five times** to unlock its fourth selection button. The unlock is saved alongside your personal best.
+
 ## The stage
 
 One continuous **1.84 km** course links a cliffside opening, downhill run, 64 m loop, corkscrew, three ocean rails, an airborne enemy chain, sunstone ruins and tunnel, a banked vertical wall, a giant waterfall jump and the final sprint. Rings trace racing lines. Dash panels, springs, breakaway bridge slabs, birds and robot debris react as you pass. Steer right at the first fork or left entering the ruins to find two narrow elevated routes.
 
-The playable character follows the supplied Mona Lisa Octocat reference: an oversized, softly rounded black head with low cat ears, a peach face set low on the head, simple brown oval eyes and a small smile, four short feet and a slender side tentacle with pale suction cups. The head and face contours are modeled from the reference proportions. Mona takes short, quick steps and tucks into a dark curled form for rolling and homing attacks. The procedural rig also supports breathing, blinking, jumping, landing, drifting, grinding, spring launches, stumbling and victory. The camera changes composition for the loop, rail and waterfall sections and checks native scene collisions.
+The three selectable mascots use rounded procedural meshes, glossy colors and animated eyes: Mona has a purple shell, pink face and short whiskers; Copilot has blue goggles, a dark visor and glowing cyan eyes; Ducky has a yellow body, orange bill and flapping wings. They bob or hover while running, tumble for rolls and homing attacks, squash on landing and celebrate at the finish. The hidden Octocat keeps the original black-and-peach model, four short feet and side tentacle. The camera changes composition for the loop, rail and waterfall sections and checks native scene collisions.
 
 The movement controller is designed around an authored boost course: distance along the stage, analog lateral motion and independent jump height are simulated against a continuous surface frame. This keeps slopes, inversions, rails and walls smooth at high speed. Falling returns you to a checkpoint; finishing shows your time, rings, speed and best homing chain. Personal bests are stored locally in Godot's `user://record.cfg`.
 
@@ -83,7 +89,8 @@ To save real rendered screenshots during a normal or demo run, create a director
 
 - `scripts/course.gd`: continuous course frames and elevated routes.
 - `scripts/player.gd`: momentum, traversal and interactions.
-- `scripts/mona.gd`: procedural Mona Lisa Octocat geometry and animation.
+- `scripts/mascot.gd`: reference-based Mona, Copilot and Ducky geometry and animation.
+- `scripts/mona.gd`: original Octocat geometry and animation, preserved as the hidden character.
 - `scripts/world.gd`, `shaders/`: original terrain, ocean, foliage, lighting and effects.
 - `scripts/main.gd`, `scripts/hud.gd`: cameras, input, menus and race presentation.
 - `scripts/audio.gd`: synthesized effects and speed-dependent wind.
@@ -91,4 +98,4 @@ To save real rendered screenshots during a normal or demo run, create a director
 - `assets/generate_audio.py`: original 152 BPM music, rendered with Python's standard library. Run it to regenerate `assets/audio/coast.wav`.
 - `assets/fonts/`: Arial, Arial Black and DIN Alternate Bold from this Mac's installed system fonts; their original font licenses apply.
 
-Mona Lisa Octocat is GitHub's character. This is a locally created fan prototype, with original code, procedural meshes, shaders and music; no official character assets are included.
+Mona and Copilot are GitHub characters. This is a locally created fan prototype, with original code, procedural meshes, shaders and music; no official character assets are included.

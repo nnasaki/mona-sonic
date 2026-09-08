@@ -32,12 +32,12 @@ func reset_at(distance: float) -> void:
 	p.surface = game.course.sample(distance)
 	p.transform = Transform3D(p.surface.basis,p.surface.p)
 
-func touch(pressed: bool, index: int = 0, canceled: bool = false) -> void:
+func touch(pressed: bool, index: int = 0, canceled: bool = false, at: Vector2 = Vector2(0.5,0.5)) -> void:
 	var event := InputEventScreenTouch.new()
 	event.index = index
 	event.pressed = pressed
 	event.canceled = canceled
-	event.position = root.get_visible_rect().size*0.5
+	event.position = root.get_visible_rect().size*at
 	root.push_input(event,true)
 
 func swipe(relative: Vector2, velocity: Vector2, index: int = 0) -> void:
@@ -57,16 +57,52 @@ func run() -> void:
 	game.set_process(false)
 	game.record_enabled = false
 	p = game.player
-	check(p.model.get_script() == preload("res://scripts/mona.gd"),"the playable character is Mona Lisa Octocat")
-	var poses_valid := true
-	for pose in ["idle","walk","jog","sprint","boost","jump","fall","spring","grind","drift","stumble","victory","charge","spin","roll","homing"]:
-		for frame in 30:
-			p.model.animate(1.0/120,42 if pose != "idle" else 0,pose,0.4,8)
-		var curled: bool = pose in ["charge","spin","roll","homing"]
-		poses_valid = poses_valid and p.model.rig.visible != curled and p.model.spin.visible == curled
-		for limb in p.model.tentacles:
-			poses_valid = poses_valid and limb.transform.is_finite()
-	check(poses_valid,"all Mona traversal poses and curled-form transitions are valid")
+	game.octocat_unlocked = false
+	game.selected_character = "mona"
+	p.select_character("mona")
+	check(game.available_characters() == ["mona","copilot","ducky"],"the initial roster contains Mona, Copilot and Ducky only")
+	var contour: Array[Vector2] = [Vector2(-1,-1),Vector2(1,-1),Vector2(1,1),Vector2(-1,1)]
+	var outward := true
+	for direction in 2:
+		var shape: ArrayMesh = p.model.outline(contour,[Vector2(0.5,-1),Vector2(1,0),Vector2(0.5,1)])
+		var arrays := shape.surface_get_arrays(0)
+		for i in arrays[Mesh.ARRAY_VERTEX].size():
+			outward = outward and arrays[Mesh.ARRAY_VERTEX][i].dot(arrays[Mesh.ARRAY_NORMAL][i]) > 0
+		contour.reverse()
+	check(outward,"rounded character meshes face outward for either contour direction")
+	game.on_command("character:octocat")
+	check(p.character == "mona","the hidden Octocat cannot be selected before unlocking")
+	var logo := Vector2(200.0/1600,220.0/900)
+	for i in 4:
+		touch(true,0,false,logo)
+		touch(false,0,false,logo)
+	check(not game.octocat_unlocked,"four logo taps do not unlock Octocat")
+	touch(true,0,false,logo)
+	touch(false,0,false,logo)
+	check(game.octocat_unlocked and game.available_characters().has("octocat"),"the fifth logo tap unlocks Octocat through viewport input")
+	for id in game.available_characters():
+		game.on_command("character:"+id)
+		check(p.character == id and p.model.get_parent() == p,"selecting %s replaces the live preview" % id)
+		var poses_valid := true
+		for pose in ["idle","walk","jog","sprint","boost","jump","fall","spring","grind","drift","stumble","victory","charge","spin","roll","homing"]:
+			for frame in 30:
+				p.model.animate(1.0/120,42 if pose != "idle" else 0,pose,0.4,8)
+			var curled: bool = pose in ["charge","spin","roll","homing"]
+			poses_valid = poses_valid and p.model.rig.visible != curled and p.model.spin.visible == curled and p.model.rig.transform.is_finite()
+			for limb in p.model.tentacles:
+				poses_valid = poses_valid and limb.transform.is_finite()
+		check(poses_valid,"%s supports every traversal pose and curled-form transition" % id)
+		game.start_run()
+		check(p.character == id and p.active,"%s remains selected when the run starts" % id)
+		game.on_command("character:mona")
+		check(p.character == id,"character changes are ignored during a run")
+		game.on_command("title")
+	check(p.model.get_script() == preload("res://scripts/mona.gd"),"hidden Octocat preserves the original model")
+	game.on_command("character:mona")
+	game.on_command("character:unknown")
+	check(p.character == "mona","unknown character IDs do not replace the runner")
+	game.touch_controls = false
+	p.auto_run = false
 	var course: CoastCourse = game.course
 	check(course.length > 1800 and course.sections.size() == 9,"continuous 1.8 km course and nine landmarks")
 	var inverted := false
